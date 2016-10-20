@@ -1,0 +1,35 @@
+{
+  "version": "0.0.1",
+  "author": "Jordon Bedwell",
+  "license": "LicenseRef-license.txt",
+  "description": "Kramdown Style Attributes for Markdown-it",
+  "bugs": { "url": "https://github.com/forestryio/markdown-it-kramdown-attrs/issues" },
+  "repository": { "type": "git", "url": "git+https://github.com/forestryio/markdown-it-kramdown-attrs.git" },
+  "homepage": "https://github.com/forestryio/markdown-it-kramdown-attrs#readme",
+  "main": "lib/markdown-it/kramdown-attrs.js",
+  "name": "markdown-it-kramdown-attrs",
+
+  "scripts": {
+    "start": "echo \"Error: no script/start specified\" && exit 1",
+    "test": "mocha --compilers js:babel-core/register --reporter spec spec/tests/**/*.js",
+    "build": "NODE_ENV=production webpack --progress -p --display-error-details",
+    "prepublish": "rm -rf lib/ && npm run build"
+  },
+
+  "devDependencies": {
+    "babel": "^6.5.2",
+    "babel-cli": "^6.14.0",
+    "babel-loader": "^6.2.5",
+    "babel-preset-react": "^6.11.1",
+    "babel-preset-stage-2": "^6.5.0",
+    "babel-preset-es2015": "^6.14.0",
+    "imports-loader": "^0.6.5",
+    "webpack": "^1.13.2",
+    "mocha": "^3.1.2"
+  },
+
+  "dependencies": {
+    "markdown-it": "^8.0.1",
+    "shell-quote": "^1.6.1"
+  }
+}
