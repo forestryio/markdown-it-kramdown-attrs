@@ -10,10 +10,10 @@
   "name": "markdown-it-kramdown-attrs",
 
   "scripts": {
+    "prepublish": "rm -rf lib/ && npm run build",
     "start": "echo \"Error: no script/start specified\" && exit 1",
     "test": "mocha --compilers js:babel-core/register --reporter spec spec/tests/**/*.js",
-    "build": "NODE_ENV=production webpack --progress -p --display-error-details",
-    "prepublish": "rm -rf lib/ && npm run build"
+    "build": "script/build"
   },
 
   "devDependencies": {

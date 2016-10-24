@@ -71,7 +71,7 @@ export default webpackConfig = {
 
   output: {
     umdNamedDefine: true,
-    filename: "[name].js",
+    filename: "[name].web.js",
     path: path.join(path.resolve(__dirname), "lib"),
     libraryTarget: "umd",
   },
