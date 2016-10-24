@@ -12,6 +12,41 @@ renderer.use(
 // --
 
 describe("KramdownAttrs", () => {
+  it("# Text{: .class}", () => {
+    let result = renderer.render("# Text{: .class}").trim()
+    assert.equal(result,
+      '<h1 class="class">Text</h1>'
+    )
+  })
+
+  it("# ![Text](image.jpg){:.class1}\\n{:.class2}", () => {
+    let result = renderer.render("# ![Text](image.jpg){:.class1}\n{:.class2}").trim()
+    assert.equal(result,
+      '<h1 class="class2"><img src="image.jpg" alt="Text" class="class1"></h1>'
+    )
+  })
+
+  it("# ![Text](image.jpg){:.class1 .class2}\\n{:.class3 .class4}", () => {
+    let result = renderer.render("# ![Text](image.jpg){:.class1 .class2}\n{:.class3 .class4}").trim()
+    assert.equal(result,
+      '<h1 class="class3 class4"><img src="image.jpg" alt="Text" class="class1 class2"></h1>'
+    )
+  })
+
+  it("# ![Text](image.jpg){:.class1}\\n{:.class2}\\n{:.class3}\\n{:.class4}", () => {
+    let result = renderer.render("# ![Text](image.jpg){:.class1}\n{:.class2}\n{:.class3}\n{:.class4}").trim()
+    assert.equal(result,
+      '<h1 class="class2 class3 class4"><img src="image.jpg" alt="Text" class="class1"></h1>'
+    )
+  })
+
+  it("Text{: .class1}\\n{: .class2}", () => {
+    let result = renderer.render("Text{: .class1}\n{: .class2}").trim()
+    assert.equal(result,
+      '<p class="class1 class2">Text</p>'
+    )
+  })
+
   it("Text{: .class}", () => {
     let result = renderer.render("Text{: .class}").trim()
     assert.equal(result,

@@ -1,5 +1,6 @@
 import { parse as shellParser } from "shell-quote"
 const globalRe = /(?:\s*|\n*){:([^}]+)}(?:\n|$)/g
+const fullMtRe = /^(?:\s*|\n*)({:([^}]+)}\n?)+$/g
 const singleRe = /(?:\s*|\n*){:([^}]+)}(?:\n|$)/
 
 // --
@@ -13,10 +14,12 @@ function arrayUniq(array) {
 }
 
 // --
-// Strip the {: } from the content.
+// Loop through childen of `token` and remove the softbreak before and all
+// softbreaks after so that the user has a clean state and not a bunch of "\n\n"
+// when they get their content, and also no `{:#attr}` and stuff.
 // --
 
-function stripCurly(token) {
+function cleanupChildrenAndRemoveCurly(token) {
   let children = [], childFound
   token.content.replace(
     singleRe, ""
@@ -52,74 +55,145 @@ function stripCurly(token) {
 }
 
 // --
-// Parse the attributes from {:.class #id key=val}
-// into the parent and as a part of the context.
+
+function addClass(attr, target) {
+  let classes
+
+  target.attrs.forEach((ary) => {
+    if (ary[0] == "class") {
+      classes = ary
+    }
+  })
+
+  if (!classes) {
+    target.attrs.push(
+      classes = [
+        "class", ""
+      ]
+    )
+  }
+
+  classes[1] = classes[1].split(/\s+/)
+  classes[1].push(attr.replace(/^\s*\./, ""))
+  classes[1] = arrayUniq(classes[1]).
+    join(" ").trim()
+}
+
+// --
+
+function addID(attr, target) {
+  target.attrs.push(["id",
+    attr.replace(/^\s*#/, "")
+  ])
+}
+
+// --
+
+function addAttr(attr, target) {
+  attr = attr.split(/\s*=\s*/)
+  target.attrs.push([attr[0],
+    attr.slice(1, attr.length).join("=")
+  ])
+}
+
+// --
+// Parse the attributes from {:.class #id key=val} into the target and as a
+// part of the context.
 // --
 
 function parseAttrs(state) {
-  if (state.tokens) {
-    state.tokens.forEach((token, i) => {
-      if (token.block && token.type == "inline") {
-        let attrMatches = token.content.match(globalRe)
-        if (attrMatches && attrMatches.length > 0) {
-          stripCurly(token)
+  let skipNext = false
+    , tokens = []
 
-          attrMatches.forEach((attrs) => {
-            attrs = shellParser(attrs.match(singleRe)[1].replace(/#/, "\\#"))
+  state.tokens.forEach((token, i) => {
+    if (!skipNext) {
+      tokens.push(
+        token
+      )
+    }
 
-            // --
-            // Grab the parent.
-            // --
+    else {
+      skipNext = false
+    }
 
-            let parent = state.tokens[i - 1]
-            if (!parent.attrs) {
-              parent.attrs = [
-                //
-              ]
+    if (token.block && token.type == "inline") {
+      let attrMatches = token.content.match(globalRe)
+      if (attrMatches && attrMatches.length > 0) {
+        cleanupChildrenAndRemoveCurly(token)
+
+        if (token.content.match(fullMtRe)) { tokens.pop()
+          if (state.tokens[i - 1].type == "paragraph_open") { tokens.pop()
+            if (state.tokens[i + 1].type == "paragraph_close") {
+              skipNext = true
+            }
+          }
+        }
+
+        attrMatches.forEach((attrs) => {
+          let target
+
+          attrs = shellParser(
+            attrs.match(singleRe)[1].replace(
+              /#/, "\\#"
+            )
+          )
+
+          if (token.content.match(fullMtRe)) {
+            let current = tokens.length; target = tokens[current]
+            do { current -= 1; target = tokens[current] } while (
+              target.type == "inline" || target.type.match(
+                /_close$/
+              )
+            )
+          }
+
+          else if (token.children[0].type == "text") {
+            target = state.tokens[
+              i - 1
+            ]
+          }
+
+          else {
+            target = token.children[
+              0
+            ]
+          }
+
+          // --
+
+          if (!target.attrs) {
+            target.attrs = [
+              //
+            ]
+          }
+
+          // --
+
+          attrs.forEach((attr) => {
+            if (attr.match(/^\s*\./)) {
+              addClass(
+                attr, target
+              )
             }
 
-            // --
+            else if (attr.match(/^\s*#/)) {
+              addID(
+                attr, target
+              )
+            }
 
-            attrs.forEach((attr) => {
-              if (attr.match(/^\s*\./)) {
-                let classes
-
-                parent.attrs.forEach((ary) => {
-                  if (ary[0] == "class") classes = ary
-                })
-
-                if (!classes) {
-                  parent.attrs.push(
-                    classes = [
-                      "class", ""
-                    ]
-                  )
-                }
-
-                classes[1] = classes[1].split(/\s+/)
-                classes[1].push(attr.replace(/^\s*\./, ""))
-                classes[1] = arrayUniq(classes[1]).
-                join(" ").trim()
-              }
-
-              else if (attr.match(/^\s*#/)) {
-                parent.attrs.push(["id",
-                  attr.replace(/^\s*#/, "")
-                ])
-              }
-
-              else {
-                attr = attr.split(/\s*=\s*/)
-                parent.attrs.push([attr[0],
-                  attr.slice(1, attr.length).join("=")
-                ])
-              }
-            })
+            else {
+              addAttr(
+                attr, target
+              )
+            }
           })
-        }
+        })
       }
-    })
-  }
+    }
+  })
+
+  state.tokens = tokens
 }
 
 // --
